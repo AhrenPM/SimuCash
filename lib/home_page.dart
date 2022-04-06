@@ -1,13 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import 'data_architecture.dart';
 import 'transfer_page.dart';
 
 class HomePage extends StatefulWidget {
+  userCard ownerCard;
+
+  HomePage({Key? key, required this.ownerCard}) : super(key: key);
+
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
+
+  late TextEditingController _addFund;
+  late int fundToAdd;
+
+  void initState() {
+    super.initState();
+    _addFund = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _addFund.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,19 +53,19 @@ class _HomePageState extends State<HomePage> {
         body: Center(
           child: Column(children: [
             Padding(
-              padding: EdgeInsets.only(top: 30),
+              padding: const EdgeInsets.only(top: 30),
               child: Card(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 80.0, vertical: 20),
-                  child: Column(children: const [
-                    Text('Account Balance',
+                  child: Column(children: [
+                    const Text('Account Balance',
                         style: TextStyle(
                             fontSize: 24, fontWeight: FontWeight.bold)),
                     Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20.0),
-                        child: Text('487 \$',
-                            style: TextStyle(
+                        padding: const EdgeInsets.symmetric(vertical: 20.0),
+                        child: Text('\$'+widget.ownerCard.amount.toString(),
+                            style: const TextStyle(
                                 color: Color(0xffbe9e44),
                                 fontSize: 48,
                                 fontWeight: FontWeight.w600)))
@@ -54,7 +75,8 @@ class _HomePageState extends State<HomePage> {
             ),
             Padding(
               padding: const EdgeInsets.only(bottom: 0),
-              child: DataTable(
+              child: widget.ownerCard.numTransaction()>0
+                ? DataTable(
                 columns: const <DataColumn>[
                   DataColumn(
                     label: Text(
@@ -75,30 +97,27 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ],
-                rows: const <DataRow>[
-                  DataRow(
-                    cells: <DataCell>[
-                      DataCell(Text('Jan 1, 2022')),
-                      DataCell(Text('Sent')),
-                      DataCell(Text('50 \$')),
-                    ],
-                  ),
-                  DataRow(
-                    cells: <DataCell>[
-                      DataCell(Text('Feb 14, 2022')),
-                      DataCell(Text('Received')),
-                      DataCell(Text('10 \$')),
-                    ],
-                  ),
-                  DataRow(
-                    cells: <DataCell>[
-                      DataCell(Text('Feb 22, 2022')),
-                      DataCell(Text('Deposit')),
-                      DataCell(Text('200 \$')),
-                    ],
-                  ),
-                ],
-              ),
+                rows: List<DataRow>.generate(
+                  widget.ownerCard.numTransaction()+1,
+                      (int index) => DataRow(
+                        cells: <DataCell>[
+                          DataCell(Text(widget.ownerCard.transactions[index].transfer_time.year.toString()+"-"+widget.ownerCard.transactions[index].transfer_time.month.toString()+"-"+widget.ownerCard.transactions[index].transfer_time.day.toString())),
+                          DataCell(Text(widget.ownerCard.transactions[index].amount>0
+                              ? "Debit"
+                              : "Credit"
+                          )),
+                          DataCell(Text('\$'+widget.ownerCard.transactions[index].amount.abs().toString())),
+                        ],
+                      ),
+                )
+              )
+                : const Center(
+                  child: Text('No Transactions Yet',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600),
+                  )),
             ),
           ]),
         ),
@@ -109,7 +128,20 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               FloatingActionButton.extended(
-                onPressed: () {},
+                onPressed: () {
+                  //TODO possibly replace with the commented out part in the bottom to be able to decide how much fund to add
+                  widget.ownerCard.addTransaction(Transaction(
+                      transfer_time: DateTime.now(),
+                      origin_card_key: '00000',
+                      amount: 100,
+                      transfer_confirm: true,
+                      destination_card_key: widget.ownerCard.card_key,
+                      transfer_id: generateTransferID('00000', widget.ownerCard.card_key, DateTime.now())
+                  ));
+                  setState(() {
+                    widget.ownerCard = widget.ownerCard;
+                  });
+                },
                 icon: const Icon(Icons.add, color: Colors.white),
                 label: const Text(
                   'Funds',
@@ -122,8 +154,7 @@ class _HomePageState extends State<HomePage> {
               ),
               FloatingActionButton.extended(
                 onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => TransferPage()));
+                  _asyncTransferPage(context);
                 },
                 label: const Text(
                   '\$ Transfer',
@@ -138,4 +169,55 @@ class _HomePageState extends State<HomePage> {
           ),
         ));
   }
+
+  void _asyncTransferPage(BuildContext context) async {
+
+    // start the SecondScreen and wait for it to finish with a result
+    final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TransferPage(ownerCard: widget.ownerCard,),
+        ));
+
+    // after the SecondScreen result comes back update the Text widget with it
+    setState(() {
+      widget.ownerCard = result;
+    });
+  }
+
+  //TODO if someone can look at this part
+  /*Future asyncAddFund() => showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+            title: const Text('Add Funding to Card'),
+            content: TextField(
+              autofocus: true,
+              controller: _addFund,
+              decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText:'Enter the amount of fund to add',),
+              keyboardType: TextInputType.number,
+              inputFormatters: <TextInputFormatter>[
+                FilteringTextInputFormatter.digitsOnly
+              ],
+            ),
+            actions: [
+              TextButton(
+                child: const Text('Add Fund'),
+              onPressed: (
+                  widget.ownerCard.addTransaction(Transaction(
+                      transfer_time: DateTime.now(),
+                      origin_card_key: '00000',
+                      amount: int.parse(_addFund.text),
+                      transfer_confirm: true,
+                      destination_card_key: widget.ownerCard.card_key,
+                      transfer_id: generateTransferID('00000', widget.ownerCard.card_key, DateTime.now())
+                  ));
+                  Navigator.of(context).pop();
+              )
+          )
+        ],
+        )
+  );*/
+
 }
