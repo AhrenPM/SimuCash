@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -46,7 +49,7 @@ class _HomePageState extends State<HomePage> {
                 Navigator.pop(context);
               },
               child:
-                  const Text('Log Out', style: TextStyle(color: Colors.black)),
+              const Text('Log Out', style: TextStyle(color: Colors.black)),
             ),
           ],
         ),
@@ -76,44 +79,44 @@ class _HomePageState extends State<HomePage> {
             Padding(
               padding: const EdgeInsets.only(bottom: 0),
               child: widget.ownerCard.numTransaction()>0
-                ? DataTable(
-                columns: const <DataColumn>[
-                  DataColumn(
-                    label: Text(
-                      'Date',
-                      style: TextStyle(fontStyle: FontStyle.italic),
-                    ),
-                  ),
-                  DataColumn(
-                    label: Text(
-                      'Type',
-                      style: TextStyle(fontStyle: FontStyle.italic),
-                    ),
-                  ),
-                  DataColumn(
-                    label: Text(
-                      'Amount',
-                      style: TextStyle(fontStyle: FontStyle.italic),
-                    ),
-                  ),
-                ],
-                rows: List<DataRow>.generate(
-                  widget.ownerCard.numTransaction()+1,
-                      (int index) => DataRow(
-                        cells: <DataCell>[
-                          DataCell(Text(widget.ownerCard.transactions[index].transfer_time.year.toString()+"-"+widget.ownerCard.transactions[index].transfer_time.month.toString()+"-"+widget.ownerCard.transactions[index].transfer_time.day.toString())),
-                          DataCell(Text(widget.ownerCard.transactions[index].amount>0
-                              ? "Debit"
-                              : "Credit"
-                          )),
-                          DataCell(Text('\$'+widget.ownerCard.transactions[index].amount.abs().toString())),
-                        ],
+                  ? DataTable(
+                  columns: const <DataColumn>[
+                    DataColumn(
+                      label: Text(
+                        'Date',
+                        style: TextStyle(fontStyle: FontStyle.italic),
                       ),
-                )
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Type',
+                        style: TextStyle(fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Amount',
+                        style: TextStyle(fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                  ],
+                  rows: List<DataRow>.generate(
+                    widget.ownerCard.numTransaction()+1,
+                        (int index) => DataRow(
+                      cells: <DataCell>[
+                        DataCell(Text(widget.ownerCard.transactions[index].transfer_time.year.toString()+"-"+widget.ownerCard.transactions[index].transfer_time.month.toString()+"-"+widget.ownerCard.transactions[index].transfer_time.day.toString())),
+                        DataCell(Text(widget.ownerCard.transactions[index].amount>0
+                            ? "Received"
+                            : "Sent"
+                        )),
+                        DataCell(Text('\$'+widget.ownerCard.transactions[index].amount.abs().toString())),
+                      ],
+                    ),
+                  )
               )
-                : const Center(
+                  : const Center(
                   child: Text('No Transactions Yet',
-                      style: TextStyle(
+                    style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w600),
@@ -129,17 +132,43 @@ class _HomePageState extends State<HomePage> {
             children: <Widget>[
               FloatingActionButton.extended(
                 onPressed: () {
-                  //TODO possibly replace with the commented out part in the bottom to be able to decide how much fund to add
-                  widget.ownerCard.addTransaction(Transaction(
-                      transfer_time: DateTime.now(),
-                      origin_card_key: '00000',
-                      amount: 100,
-                      transfer_confirm: true,
-                      destination_card_key: widget.ownerCard.card_key,
-                      transfer_id: generateTransferID('00000', widget.ownerCard.card_key, DateTime.now())
-                  ));
-                  setState(() {
-                    widget.ownerCard = widget.ownerCard;
+                  final waitDuration = waitTime();
+                  final fundingAmount = receivedAmount();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Proceeding with transaction'),
+                      duration: Duration(milliseconds: waitDuration),
+                    ),
+                  );
+                  Timer(Duration(milliseconds: waitDuration+((waitDuration)/100).round()), () {
+                    //print('The current account balance is: '+widget.ownerCard.amount.toString()+'.');
+                    widget.ownerCard.addTransaction(Transaction(
+                        transfer_time: DateTime.now(),
+                        origin_card_key: '00000',
+                        amount: fundingAmount,
+                        transfer_confirm: true,
+                        destination_card_key: widget.ownerCard.card_key,
+                        transfer_id: generateTransferID('00000', widget.ownerCard.card_key, DateTime.now())
+                    ));
+                    setState(() {
+                      widget.ownerCard = widget.ownerCard;
+                    });
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          content: Text("You have successfully added \$"+ fundingAmount.toString() +" from your bank to your card."),
+                          actions: <Widget>[
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: const Text('Return'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
                   });
                 },
                 icon: const Icon(Icons.add, color: Colors.white),
@@ -171,7 +200,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _asyncTransferPage(BuildContext context) async {
-
     // start the SecondScreen and wait for it to finish with a result
     final result = await Navigator.push(
         context,
@@ -184,40 +212,13 @@ class _HomePageState extends State<HomePage> {
       widget.ownerCard = result;
     });
   }
+  int receivedAmount(){
+    Random amount = new Random();
+    return amount.nextInt(1000)+1;
+  }
 
-  //TODO if someone can look at this part
-  /*Future asyncAddFund() => showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-            title: const Text('Add Funding to Card'),
-            content: TextField(
-              autofocus: true,
-              controller: _addFund,
-              decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText:'Enter the amount of fund to add',),
-              keyboardType: TextInputType.number,
-              inputFormatters: <TextInputFormatter>[
-                FilteringTextInputFormatter.digitsOnly
-              ],
-            ),
-            actions: [
-              TextButton(
-                child: const Text('Add Fund'),
-              onPressed: (
-                  widget.ownerCard.addTransaction(Transaction(
-                      transfer_time: DateTime.now(),
-                      origin_card_key: '00000',
-                      amount: int.parse(_addFund.text),
-                      transfer_confirm: true,
-                      destination_card_key: widget.ownerCard.card_key,
-                      transfer_id: generateTransferID('00000', widget.ownerCard.card_key, DateTime.now())
-                  ));
-                  Navigator.of(context).pop();
-              )
-          )
-        ],
-        )
-  );*/
-
+  int waitTime(){
+    Random time = new Random();
+    return time.nextInt(3000)+1;
+  }
 }

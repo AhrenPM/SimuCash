@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:simucash/data_architecture.dart';
+import 'create_account_page.dart';
 import 'home_page.dart';
 
 class Login extends StatefulWidget {
@@ -101,9 +102,9 @@ class _LoginState extends State<Login> {
                         ),
                         const Padding(
                           padding: EdgeInsets.only(
-                              left: 15.0, right: 15.0, top: 15.0, bottom: 0.0),
+                              left: 15.0, right: 15.0, top: 15.0, bottom: 10.0),
                         ),
-                        TextButton(
+/*                        TextButton(
                           onPressed: () {
                             // Forgot password
                             // TODO FORGOT PASSWORD SCREEN GOES HERE
@@ -112,7 +113,7 @@ class _LoginState extends State<Login> {
                             'Forgot Password',
                             style: TextStyle(color: Colors.blue, fontSize: 15),
                           ),
-                        ),
+                        ),*/
                         Container(
                           height: 50,
                           width: 250,
@@ -127,7 +128,7 @@ class _LoginState extends State<Login> {
                                 password.clear();
                                 Navigator.push(
                                     context, MaterialPageRoute(builder: (_) =>
-                                    HomePage(ownerCard: User.cards)));
+                                    HomePage(ownerCard: User.primary_card)));
                               }
                             },
                             child: const Text(
@@ -146,7 +147,16 @@ class _LoginState extends State<Login> {
             const SizedBox(
               height: 80,
             ),
-            const Text('New User? Create Account'),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => CreateAccount()));
+              },
+              child: const Text(
+                'Create Account',
+                style: TextStyle(color: Colors.blue, fontSize: 15),
+              ),
+            ),
           ],
         ),
       ),

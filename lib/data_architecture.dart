@@ -1,14 +1,15 @@
 class Account{
-  final String u_id;
-  final String password;
-  userCard cards;
-  late String primary_card_key;
+  late String u_id;
+  late String password;
+  var cards = <userCard>[];
+  var primary_card;
+  var primary_card_key;
 
-  Account(this.u_id, this.password, this.cards);
-
-  setPrimaryCard(){
-    primary_card_key = cards.card_key;
-    return;
+  Account(this.u_id, this.password, userCard card){
+    u_id = u_id;
+    password = password;
+    cards.add(card);
+    primary_card = cards.first;
   }
 }
 
