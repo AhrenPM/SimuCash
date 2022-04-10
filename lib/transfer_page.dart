@@ -1,12 +1,9 @@
-//import 'dart:ffi';
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:math';
 
-
+import 'Widgets.dart';
 import 'data_architecture.dart';
 
 
@@ -24,7 +21,7 @@ class _TransferPageState extends State<TransferPage> {
   bool _emptyField = false;
 
   late TextEditingController _transferAmount;
-  late int transferAmount;
+  late double transferAmount;
   late Transaction newTr;
 
   // partner card is for testing purposes
@@ -81,10 +78,10 @@ class _TransferPageState extends State<TransferPage> {
                 errorText: _emptyField
                     ? 'Please enter an amount to transfer:'
                     : null,),
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: <TextInputFormatter>[
-                FilteringTextInputFormatter.digitsOnly
-              ], // Only numbers can be entered
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+              ], // Only numbers with up to 2 decimal places
             ),
           ],
         ),
@@ -160,7 +157,7 @@ class _TransferPageState extends State<TransferPage> {
                 late String popupText;
                 var waitDuration = waitTime();
                 var enoughBalance = true;
-                transferAmount = int.parse(_transferAmount.text);
+                transferAmount = double.parse(_transferAmount.text);
                 if (widget.ownerCard.amount<=transferAmount){
                   popupText = "You do not have enough balance in your card to proceed with a transfer of \$"+_transferAmount.text+" to the card with card number "+partner.card_key+". Please try again when your card balance is sufficient.";
                   waitDuration = 0;
@@ -223,14 +220,5 @@ class _TransferPageState extends State<TransferPage> {
         ),
       ),
     );
-  }
-  int receivedAmount(){
-    Random Amount = new Random();
-    return Amount.nextInt(1000)+1;
-  }
-
-  int waitTime(){
-    Random time = new Random();
-    return time.nextInt(3000)+1;
   }
 }

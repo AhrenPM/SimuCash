@@ -1,9 +1,8 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
+import 'Widgets.dart';
 import 'data_architecture.dart';
 import 'transfer_page.dart';
 
@@ -67,7 +66,7 @@ class _HomePageState extends State<HomePage> {
                             fontSize: 24, fontWeight: FontWeight.bold)),
                     Padding(
                         padding: const EdgeInsets.symmetric(vertical: 20.0),
-                        child: Text('\$'+widget.ownerCard.amount.toString(),
+                        child: Text('\$'+double.parse(widget.ownerCard.amount.toStringAsFixed(2)).toString(),
                             style: const TextStyle(
                                 color: Color(0xffbe9e44),
                                 fontSize: 48,
@@ -78,7 +77,7 @@ class _HomePageState extends State<HomePage> {
             ),
             Padding(
               padding: const EdgeInsets.only(bottom: 0),
-              child: widget.ownerCard.numTransaction()>0
+              child: widget.ownerCard.numTransaction()>=0
                   ? DataTable(
                   columns: const <DataColumn>[
                     DataColumn(
@@ -211,14 +210,5 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       widget.ownerCard = result;
     });
-  }
-  int receivedAmount(){
-    Random amount = new Random();
-    return amount.nextInt(1000)+1;
-  }
-
-  int waitTime(){
-    Random time = new Random();
-    return time.nextInt(3000)+1;
   }
 }

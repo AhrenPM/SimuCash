@@ -4,20 +4,20 @@ import 'create_account_page.dart';
 import 'home_page.dart';
 
 class Login extends StatefulWidget {
-  const Login({Key? key}) : super(key: key);
+
+  Login({Key? key}) : super(key: key);
 
   @override
   _LoginState createState() => _LoginState();
 }
 
 class _LoginState extends State<Login> {
-  userCard ownerCard = userCard('0001',100);
-  Account User = Account('user1', '1234', userCard('0001',100));
-
+  var allAccounts = <Account>[Account('user1', '1234', userCard('0001',100))];
   final username = TextEditingController();
   final password = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-
+  int indexCheck = -1;
+  late Account loggedInUser;
   @override
   void dispose() {
     // Clean up the controller when the widget is disposed.
@@ -54,27 +54,27 @@ class _LoginState extends State<Login> {
               child: Form(
                 key: _formKey,
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   child: AutofillGroup(
                     child: Column(
                       children: [
                         TextFormField(
                           controller: username,
-                          decoration: InputDecoration(
-                            hintText: 'Please enter your password here',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
+                          decoration: const InputDecoration(
+                            hintText: 'Username',
+                            border: OutlineInputBorder(),
+                            labelText: 'Enter your username',
                           ),
                           validator: (username) {
-                            if (username == User.u_id) {
+                            if (username != null && checkUsername(username) != -1) {
+                              indexCheck = checkUsername(username);
                               return null;
                             }
                             else if (username != null && username.isEmpty) {
                               return 'Enter a user ID';
                             }
-                            else if (username != null && username != User.u_id){
-                              return 'Incorrect user ID';
+                            else if (username != null && checkUsername(username) == -1){
+                              return 'Invalid user ID';
                             }
                           },
                         ),
@@ -82,20 +82,19 @@ class _LoginState extends State<Login> {
                         TextFormField(
                           controller: password,
                           obscureText: true,
-                          decoration: InputDecoration(
-                            hintText: 'Please enter your password here',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
+                          decoration: const InputDecoration(
+                            hintText: 'Password',
+                            border: OutlineInputBorder(),
+                            labelText: 'Enter your password',
                           ),
                           validator: (password) {
-                            if (password == User.password) {
+                            if (password != null && indexCheck != -1 && allAccounts[indexCheck].password == password) {
                               return null;
                             }
                             else if (password != null && password.isEmpty) {
                               return 'Enter a password';
                             }
-                            else if (password != null && password != User.password){
+                            else if (password != null && indexCheck != -1 && allAccounts[indexCheck].password != password){
                               return 'Incorrect password';
                             }
                           },
@@ -104,16 +103,6 @@ class _LoginState extends State<Login> {
                           padding: EdgeInsets.only(
                               left: 15.0, right: 15.0, top: 15.0, bottom: 10.0),
                         ),
-/*                        TextButton(
-                          onPressed: () {
-                            // Forgot password
-                            // TODO FORGOT PASSWORD SCREEN GOES HERE
-                          },
-                          child: const Text(
-                            'Forgot Password',
-                            style: TextStyle(color: Colors.blue, fontSize: 15),
-                          ),
-                        ),*/
                         Container(
                           height: 50,
                           width: 250,
@@ -126,9 +115,10 @@ class _LoginState extends State<Login> {
                               if (_formKey.currentState!.validate()) {
                                 username.clear();
                                 password.clear();
+                                loggedInUser = allAccounts[indexCheck];
                                 Navigator.push(
                                     context, MaterialPageRoute(builder: (_) =>
-                                    HomePage(ownerCard: User.primary_card)));
+                                    HomePage(ownerCard: loggedInUser.primary_card)));
                               }
                             },
                             child: const Text(
@@ -149,8 +139,7 @@ class _LoginState extends State<Login> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.push(
-                    context, MaterialPageRoute(builder: (_) => CreateAccount()));
+                _asyncTransferPage(context);
               },
               child: const Text(
                 'Create Account',
@@ -161,5 +150,38 @@ class _LoginState extends State<Login> {
         ),
       ),
     );
+  }
+  void _asyncTransferPage(BuildContext context) async {
+    // start the SecondScreen and wait for it to finish with a result
+    final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CreateAccount(allAccounts: allAccounts),
+        ));
+
+    // after the SecondScreen result comes back update the Text widget with it
+    setState(() {
+      allAccounts = result;
+    });
+  }
+
+  int checkUsername(String userName){
+    var index = -1;
+    for (var i = 0; i<allAccounts.length; i++){
+      if (allAccounts[i].username == userName){
+        index = i;
+      }
+    }
+    return index;
+  }
+
+  int checkPassword(String userPass){
+    var index = -1;
+    for (var i = 0; i<allAccounts.length; i++){
+      if (allAccounts[i].password == userPass){
+        index = i;
+      }
+    }
+    return index;
   }
 }
