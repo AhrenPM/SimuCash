@@ -173,10 +173,6 @@ class _CreateAccountState extends State<CreateAccount> {
                           child: TextButton(
                             onPressed: () {
                               if (_formKey.currentState!.validate()){
-                                cardID.clear();
-                                username.clear();
-                                password.clear();
-                                repeatpassword.clear();
                                 var card = userCard(cardID.text, receivedAmount());
                                 var account =Account(username.text, password.text, card);
                                 widget.allAccounts.add(account);
@@ -187,6 +183,10 @@ class _CreateAccountState extends State<CreateAccount> {
                                     duration: Duration(milliseconds: waitDuration),
                                   ),
                                 );
+                                cardID.clear();
+                                username.clear();
+                                password.clear();
+                                repeatpassword.clear();
                                 Timer(Duration(milliseconds: waitDuration+((waitDuration)/100).round()), () {
                                   showDialog(
                                     context: context,
@@ -198,7 +198,7 @@ class _CreateAccountState extends State<CreateAccount> {
                                             onPressed: () {
                                               Navigator.pop(context,widget.allAccounts);
                                             },
-                                            child: const Text('Return to login page'),
+                                            child: const Text('Return'),
                                           ),
                                         ],
                                       );
